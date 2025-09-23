@@ -20,17 +20,25 @@ jobs:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
       - name: Fetch release info
         id: release
         run: |
           TAG="${{ github.event.workflow_run.head_branch }}"
           echo "TAG=$TAG" >> $GITHUB_ENV
-          # Get release data using GH CLI
-          gh release view "$TAG" --json name,body > release.json
-          echo "RELEASE_TITLE=$(jq -r .name release.json)" >> $GITHUB_ENV
-          echo "RELEASE_BODY=$(jq -r .body release.json)" >> $GITHUB_ENV
+
+          echo "Getting release info for $TAG..."
+          gh release view "$TAG" --json name,body > release.json || echo "{}" > release.json
+
+          echo "RELEASE_TITLE=$(jq -r '.name // "No Title"' release.json)" >> $GITHUB_ENV
+          echo "RELEASE_BODY=$(jq -r '.body // "No description provided."' release.json)" >> $GITHUB_ENV
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       # - name: Get release info
       #   run: |
