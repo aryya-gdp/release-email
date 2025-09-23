@@ -1,0 +1,68 @@
+name: Build Binary
+
+on:
+  push:
+    tags:
+      - 'gllm_agent-v*'
+      - 'gllm_agents-v*'
+      - 'gllm_core-v*'
+      - 'gllm_datastore-v*'
+      - 'gllm_docproc-v*'
+      - 'gllm_evals-v*'
+      - 'gllm_generation-v*'
+      - 'gllm_inference-v*'
+      - 'gllm_misc-v*'
+      - 'gllm_multimodal-v*'
+      - 'gllm_pipeline-v*'
+      - 'gllm_privacy-v*'
+      - 'gllm_rag-v*'
+      - 'gllm_retrieval-v*'
+      - 'gllm_tools-v*'
+      - 'gl_sdk-v*'
+      - 'gllm_memory-v*'
+  workflow_dispatch:
+
+jobs:
+  Set-Python-Version-Matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Set matrix
+        id: set-matrix
+        run: |
+          # Default Python versions for most modules
+          if [[
+            "$GITHUB_REF_NAME" == gllm_core-v*
+            || "$GITHUB_REF_NAME" == gllm_inference-v*
+            || "$GITHUB_REF_NAME" == gllm_agents-v*
+            || "$GITHUB_REF_NAME" == gllm_agent-v*
+            || "$GITHUB_REF_NAME" == gllm_evals-v*
+            || "$GITHUB_REF_NAME" == gllm_tools-v*
+          ]]; then
+            # Core and inference modules use multiple versions
+            echo 'matrix=["3.13.3"]' >> $GITHUB_OUTPUT
+          else
+            # All other modules use 3.11 and 3.12
+            echo 'matrix=["3.11.0", "3.12.0"]' >> $GITHUB_OUTPUT
+          fi
+        env:
+          GITHUB_REF_NAME: ${{ github.ref_name }}
+
+  Setup-SDK-Binary:
+    needs: Set-Python-Version-Matrix
+    timeout-minutes: 30
+    runs-on: ${{ matrix.os }}
+    outputs:
+      module: ${{ steps.set-variable.outputs.module }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-sh-arm64]
+        python-version: ${{ fromJson(needs.Set-Python-Version-Matrix.outputs.matrix) }}
+    continue-on-error: true
+    steps:
+    - name: dummy
+      shell: bash
+      run: |
+        echo "dummy"

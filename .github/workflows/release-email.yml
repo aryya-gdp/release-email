@@ -1,0 +1,56 @@
+name: Send Release Email
+
+on:
+  workflow_run:
+    workflows: ["Build Binary"]
+    types:
+      - completed
+# on:
+#   push:
+#     tags:
+#       - 'gllm_core-v*'
+
+env:
+  SMTP_PORT_DEFAULT: 587
+  SMTP_TO: aryya.b.padmanawijaya@gdplabs.id
+  SMTP_FROM: noreply@gdplabs.id
+
+jobs:
+  send-email:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fetch release info
+        id: release
+        run: |
+          TAG="${{ github.event.workflow_run.head_branch }}"
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          # Get release data using GH CLI
+          gh release view "$TAG" --json name,body > release.json
+          echo "RELEASE_TITLE=$(jq -r .name release.json)" >> $GITHUB_ENV
+          echo "RELEASE_BODY=$(jq -r .body release.json)" >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+      # - name: Get release info
+      #   run: |
+      #     echo "RELEASE_TITLE=${{ github.event.release.name }}" >> $GITHUB_ENV
+      #     echo "RELEASE_BODY=${{ github.event.release.body }}" >> $GITHUB_ENV
+
+      - name: Send email via SMTP
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: ${{ secrets.SMTP_SERVER }}
+          server_port: ${{ secrets.SMTP_PORT || env.SMTP_PORT_DEFAULT }}
+          username: ${{ secrets.SMTP_USERNAME }}
+          password: ${{ secrets.SMTP_PASSWORD }}
+          subject: "New Release: ${{ env.RELEASE_TITLE }}"
+          body: |
+            🚀 A new release has been published
+
+            **Title:** ${{ env.RELEASE_TITLE }}
+
+            **Description:**
+            ${{ env.RELEASE_BODY }}
+          to: ${{ env.SMTP_TO }}
+          from: Release Bot <${{ env.SMTP_FROM }}>
