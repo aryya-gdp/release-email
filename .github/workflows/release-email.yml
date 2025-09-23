@@ -22,12 +22,19 @@ jobs:
         run: |
           TAG="${{ github.event.workflow_run.head_branch }}"
           echo "TAG=$TAG" >> $GITHUB_ENV
-
+      
           echo "Getting release info for $TAG..."
           gh release view "$TAG" --json name,body > release.json || echo "{}" > release.json
-
-          echo "RELEASE_TITLE=$(jq -r '.name // "No Title"' release.json)" >> $GITHUB_ENV
-          echo "RELEASE_BODY=$(jq -r '.body // "No description provided."' release.json)" >> $GITHUB_ENV
+      
+          {
+            echo 'RELEASE_TITLE<<EOF'
+            jq -r '.name // "No Title"' release.json
+            echo 'EOF'
+      
+            echo 'RELEASE_BODY<<EOF'
+            jq -r '.body // "No description provided."' release.json
+            echo 'EOF'
+          } >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
