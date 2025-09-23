@@ -41,6 +41,25 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Prepare email body
+        run: |
+          cat > email.html <<'EOF'
+          <p>🚀 A new release has been published</p>
+
+          <h3>🔖 Title</h3>
+          <p><b>${{ env.RELEASE_TITLE }}</b></p>
+
+          <h3>📝 Description</h3>
+          <div style="font-family: sans-serif; line-height: 1.5;">
+            ${{ env.RELEASE_BODY_HTML }}
+          </div>
+
+          <p><b>📌 Full Changelog:</b>
+          <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.TAG }}">
+            View on GitHub
+          </a></p>
+          EOF
+
       - name: Send release email
         uses: dawidd6/action-send-mail@v3
         with:
@@ -52,18 +71,4 @@ jobs:
           to: ${{ vars.SMTP_TO }}
           from: Release Bot <${{ vars.SMTP_FROM }}>
           content_type: text/html
-          body: |
-            <p>🚀 A new release has been published</p>
-
-            <h3>🔖 Title</h3>
-            <p><b>${{ env.RELEASE_TITLE }}</b></p>
-
-            <h3>📝 Description</h3>
-            <div style="font-family: sans-serif; line-height: 1.5;">
-              ${{ env.RELEASE_BODY_HTML }}
-            </div>
-
-            <p><b>📌 Full Changelog:</b>
-            <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.TAG }}">
-              View on GitHub
-            </a></p>
+          body: file://email.html
