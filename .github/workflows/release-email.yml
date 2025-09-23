@@ -5,10 +5,6 @@ on:
     workflows: ["Build Binary"]
     types:
       - completed
-# on:
-#   push:
-#     tags:
-#       - 'gllm_core-v*'
 
 env:
   SMTP_PORT_DEFAULT: 587
@@ -39,11 +35,6 @@ jobs:
           echo "RELEASE_BODY=$(jq -r '.body // "No description provided."' release.json)" >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      # - name: Get release info
-      #   run: |
-      #     echo "RELEASE_TITLE=${{ github.event.release.name }}" >> $GITHUB_ENV
-      #     echo "RELEASE_BODY=${{ github.event.release.body }}" >> $GITHUB_ENV
 
       - name: Send email via SMTP
         uses: dawidd6/action-send-mail@v3
