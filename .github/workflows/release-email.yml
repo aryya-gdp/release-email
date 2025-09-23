@@ -30,8 +30,12 @@ jobs:
           # Get release JSON from GitHub API
           gh api repos/${{ github.repository }}/releases/tags/$TAG > release.json
 
+          echo "Release JSON:"
+          cat release.json
+
           # Extract fields
           echo "RELEASE_TITLE=$(jq -r '.name // "No Title"' release.json)" >> $GITHUB_ENV
+          echo "RELEASE_TAG=$(jq -r '.tag_name' release.json)" >> $GITHUB_ENV
 
           {
             echo 'RELEASE_BODY_HTML<<EOF'
@@ -48,6 +52,9 @@ jobs:
 
           <h3>🔖 Title</h3>
           <p><b>${{ env.RELEASE_TITLE }}</b></p>
+
+          <h3>🏷️ Tag</h3>
+          <p><code>${{ env.RELEASE_TAG }}</code></p>
 
           <h3>📝 Description</h3>
           <div style="font-family: sans-serif; line-height: 1.5;">
