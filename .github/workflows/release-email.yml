@@ -10,6 +10,8 @@ jobs:
   send-email:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,32 +24,22 @@ jobs:
         run: |
           TAG="${{ github.event.workflow_run.head_branch }}"
           echo "TAG=$TAG" >> $GITHUB_ENV
-      
+
           echo "Getting release info for $TAG..."
-          gh release view "$TAG" --json name,body > release.json || echo "{}" > release.json
-      
+
+          # Get release JSON from GitHub API
+          gh api repos/${{ github.repository }}/releases/tags/$TAG > release.json
+
+          # Extract fields
+          echo "RELEASE_TITLE=$(jq -r '.name // "No Title"' release.json)" >> $GITHUB_ENV
+
           {
-            echo 'RELEASE_TITLE<<EOF'
-            jq -r '.name // "No Title"' release.json
-            echo 'EOF'
-      
-            echo 'RELEASE_BODY<<EOF'
-            jq -r '.body // "No description provided."' release.json
+            echo 'RELEASE_BODY_HTML<<EOF'
+            jq -r '.body_html // "<p>No description provided.</p>"' release.json
             echo 'EOF'
           } >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Convert release body to HTML
-        run: |
-          echo "${{ env.RELEASE_BODY }}" > release_body.md
-          sudo apt-get install -y pandoc
-          pandoc -f markdown -t html release_body.md -o release_body.html
-          {
-            echo 'RELEASE_BODY_HTML<<EOF'
-            cat release_body.html
-            echo 'EOF'
-          } >> $GITHUB_ENV
 
       - name: Send release email
         uses: dawidd6/action-send-mail@v3
@@ -67,8 +59,8 @@ jobs:
             <p><b>${{ env.RELEASE_TITLE }}</b></p>
 
             <h3>📝 Description</h3>
-            <div style="white-space: pre-wrap; font-family: sans-serif;">
-            ${{ env.RELEASE_BODY_HTML }}
+            <div style="font-family: sans-serif; line-height: 1.5;">
+              ${{ env.RELEASE_BODY_HTML }}
             </div>
 
             <p><b>📌 Full Changelog:</b>
