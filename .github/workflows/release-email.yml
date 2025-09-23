@@ -70,5 +70,4 @@ jobs:
           subject: "🚀 New Release: ${{ env.RELEASE_TITLE }}"
           to: ${{ vars.SMTP_TO }}
           from: Release Bot <${{ vars.SMTP_FROM }}>
-          content_type: text/html
-          body: file://email.html
+          html_body: file://email.html
