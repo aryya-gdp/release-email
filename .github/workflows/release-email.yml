@@ -38,20 +38,29 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Send email via SMTP
+      - name: Send release email
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.SMTP_SERVER }}
           server_port: ${{ vars.SMTP_PORT }}
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
-          subject: "New Release: ${{ env.RELEASE_TITLE }}"
-          body: |
-            🚀 A new release has been published
-
-            **Title:** ${{ env.RELEASE_TITLE }}
-
-            **Description:**
-            ${{ env.RELEASE_BODY }}
+          subject: "🚀 New Release: ${{ env.RELEASE_TITLE }}"
           to: ${{ vars.SMTP_TO }}
           from: Release Bot <${{ vars.SMTP_FROM }}>
+          content_type: text/html
+          body: |
+            <p>🚀 A new release has been published</p>
+      
+            <h3>🔖 Title</h3>
+            <p><b>${{ env.RELEASE_TITLE }}</b></p>
+      
+            <h3>📝 Description</h3>
+            <div style="white-space: pre-wrap; font-family: monospace;">
+            ${{ env.RELEASE_BODY }}
+            </div>
+      
+            <p><b>📌 Full Changelog:</b> 
+            <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.TAG }}">
+              View on GitHub
+            </a></p>
