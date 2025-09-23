@@ -38,6 +38,17 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Convert release body to HTML
+        run: |
+          echo "${{ env.RELEASE_BODY }}" > release_body.md
+          sudo apt-get install -y pandoc
+          pandoc -f markdown -t html release_body.md -o release_body.html
+          {
+            echo 'RELEASE_BODY_HTML<<EOF'
+            cat release_body.html
+            echo 'EOF'
+          } >> $GITHUB_ENV
+
       - name: Send release email
         uses: dawidd6/action-send-mail@v3
         with:
@@ -51,16 +62,16 @@ jobs:
           content_type: text/html
           body: |
             <p>🚀 A new release has been published</p>
-      
+
             <h3>🔖 Title</h3>
             <p><b>${{ env.RELEASE_TITLE }}</b></p>
-      
+
             <h3>📝 Description</h3>
-            <div style="white-space: pre-wrap; font-family: monospace;">
-            ${{ env.RELEASE_BODY }}
+            <div style="white-space: pre-wrap; font-family: sans-serif;">
+            ${{ env.RELEASE_BODY_HTML }}
             </div>
-      
-            <p><b>📌 Full Changelog:</b> 
+
+            <p><b>📌 Full Changelog:</b>
             <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.TAG }}">
               View on GitHub
             </a></p>
