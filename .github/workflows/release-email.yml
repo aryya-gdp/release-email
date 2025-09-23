@@ -44,15 +44,13 @@ jobs:
           } >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Install Node and marked
-        run: |
-          sudo apt-get install -y nodejs npm
-          npm install -g marked
+
+      - name: Install pandoc
+        run: sudo apt-get install -y pandoc
 
       - name: Convert Markdown to HTML
         run: |
-          RELEASE_HTML=$(echo "${{ env.RELEASE_BODY }}" | marked)
+          RELEASE_HTML=$(echo "${{ env.RELEASE_BODY }}" | pandoc -f markdown -t html)
           {
             echo 'RELEASE_BODY_HTML<<EOF'
             echo "$RELEASE_HTML"
