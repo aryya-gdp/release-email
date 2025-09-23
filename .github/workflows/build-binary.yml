@@ -58,7 +58,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-13]
+        os: [macos-sh-arm64]
         python-version: ${{ fromJson(needs.Set-Python-Version-Matrix.outputs.matrix) }}
     continue-on-error: true
     steps:
