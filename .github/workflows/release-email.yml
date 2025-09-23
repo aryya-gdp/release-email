@@ -44,6 +44,20 @@ jobs:
           } >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Install Node and marked
+        run: |
+          sudo apt-get install -y nodejs npm
+          npm install -g marked
+
+      - name: Convert Markdown to HTML
+        run: |
+          RELEASE_HTML=$(echo "${{ env.RELEASE_BODY }}" | marked)
+          {
+            echo 'RELEASE_BODY_HTML<<EOF'
+            echo "$RELEASE_HTML"
+            echo 'EOF'
+          } >> $GITHUB_ENV
 
       - name: Prepare email body
         run: |
@@ -58,7 +72,7 @@ jobs:
 
           <h3>📝 Description</h3>
           <div style="font-family: sans-serif; line-height: 1.5;">
-            ${{ env.RELEASE_BODY }}
+            ${{ env.RELEASE_BODY_HTML }}
           </div>
 
           <p><b>📌 Full Changelog:</b>
