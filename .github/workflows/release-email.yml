@@ -35,7 +35,7 @@ jobs:
         uses: dawidd6/action-send-mail@v3
         with:
           server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ env.SMTP_PORT_DEFAULT | 587 }}
+          server_port: ${{ env.SMTP_PORT }}
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
           subject: "New Release: ${{ env.RELEASE_TITLE }}"
