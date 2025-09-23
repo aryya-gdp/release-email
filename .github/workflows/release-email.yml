@@ -38,8 +38,8 @@ jobs:
           echo "RELEASE_TAG=$(jq -r '.tag_name' release.json)" >> $GITHUB_ENV
 
           {
-            echo 'RELEASE_BODY_HTML<<EOF'
-            jq -r '.body_html // "<p>No description provided.</p>"' release.json
+            echo 'RELEASE_BODY<<EOF'
+            jq -r '.body // "<p>No description provided.</p>"' release.json
             echo 'EOF'
           } >> $GITHUB_ENV
         env:
@@ -58,7 +58,7 @@ jobs:
 
           <h3>📝 Description</h3>
           <div style="font-family: sans-serif; line-height: 1.5;">
-            ${{ env.RELEASE_BODY_HTML }}
+            ${{ env.RELEASE_BODY }}
           </div>
 
           <p><b>📌 Full Changelog:</b>
