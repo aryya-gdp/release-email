@@ -7,25 +7,38 @@ on:
       - completed
 
 jobs:
-  send-email:
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+  check-tag:
     runs-on: ubuntu-latest
+    outputs:
+      valid: ${{ steps.validate.outputs.valid }}
+    steps:
+      - name: Validate tag
+        id: validate
+        run: |
+          TAG="${{ github.event.workflow_run.head_branch }}"
+          echo "Checking tag: $TAG"
+          # Skip if tag is not a main version tag (e.g. post, alpha, beta, rc)
+          if [[ "$TAG" =~ ^(gllm_|gl_).*-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "valid=true" >> $GITHUB_OUTPUT
+          else
+            echo "valid=false" >> $GITHUB_OUTPUT
+          fi
+          echo "valid=$valid"
+
+  send-email:
+    needs: check-tag
+    if: needs.check-tag.outputs.valid == 'true' && github.event.workflow_run.conclusion == 'success'
+    runs-on: ubuntu-latest
+    container:
+      image: pandoc/core:3.1
     permissions:
       contents: read
     steps:
-      - name: Validate tag
-        run: |
-          TAG="${{ github.event.workflow_run.head_branch }}"
-          if [[ ! "$TAG" =~ ^(gllm_|gl_).*-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Tag $TAG is not a main version tag. Skipping."
-            exit 1
-          fi
-
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get install -y jq pandoc
+        run: sudo apt-get install -y jq
 
       - name: Fetch release info
         id: release
