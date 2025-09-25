@@ -58,29 +58,6 @@ jobs:
             core.exportVariable("RELEASE_TAG", release.data.tag_name)
             core.exportVariable("RELEASE_BODY", release.data.body || "<p>No description provided.</p>")
 
-      # - name: Fetch release info
-      #   id: release
-      #   run: |
-      #     TAG="${{ github.event.workflow_run.head_branch }}"
-      #     echo "TAG=$TAG" >> $GITHUB_ENV
-
-      #     echo "Getting release info for $TAG..."
-
-      #     # Get release JSON from GitHub API
-      #     gh api repos/${{ github.repository }}/releases/tags/$TAG > release.json
-
-      #     # Extract fields
-      #     echo "RELEASE_TITLE=$(jq -r '.name // "No Title"' release.json)" >> $GITHUB_ENV
-      #     echo "RELEASE_TAG=$(jq -r '.tag_name' release.json)" >> $GITHUB_ENV
-
-      #     {
-      #       echo 'RELEASE_BODY<<EOF'
-      #       jq -r '.body // "<p>No description provided.</p>"' release.json
-      #       echo 'EOF'
-      #     } >> $GITHUB_ENV
-      #   env:
-      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Convert Markdown to HTML
         run: |
           RELEASE_HTML=$(echo "${{ env.RELEASE_BODY }}" | pandoc -f gfm -t html --wrap=preserve --no-highlight)
@@ -96,7 +73,7 @@ jobs:
           <!DOCTYPE html>
           <html>
             <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 700px; margin: auto; padding: 20px; background: #fafafa;">
-              
+
               <div style="background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
 
                 <h2 style="text-align:center; color:#2c3e50; margin-top:0;">
@@ -119,7 +96,7 @@ jobs:
                 </div>
 
                 <p style="margin-top:25px; text-align:center;">
-                  <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.TAG }}" 
+                  <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.TAG }}"
                     style="background:#2ecc71; color:#fff; text-decoration:none; padding:10px 18px; border-radius:6px; font-size:15px; font-weight:bold;">
                     📌 View Full Release on GitHub
                   </a>
@@ -145,3 +122,6 @@ jobs:
           to: ${{ vars.SMTP_TO }}
           from: Release Bot <${{ vars.SMTP_FROM }}>
           html_body: file://email.html
+          nodemailerlog: false
+          nodemailerdebug: false
+          ignore_cert: false
