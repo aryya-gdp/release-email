@@ -25,20 +25,22 @@ jobs:
           echo "valid=$valid" >> $GITHUB_OUTPUT
           echo "valid=$valid"
 
-  send-email:
+  compose-email:
     needs: check-tag
     if: needs.check-tag.outputs.valid == 'true' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     container:
-      image: pandoc/core:3.7-ubuntu
+      image: pandoc/core:3.1
     permissions:
       contents: read
+    outputs:
+      title: ${{ steps.export.outputs.title }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: apt-get update && apt-get install -y jq
+        run: apk add jq
 
       - name: Fetch release info
         id: release
@@ -111,6 +113,25 @@ jobs:
           </html>
           EOF
 
+      - name: Upload email artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: email
+          path: email.html
+
+      - id: export
+        run: |
+          echo "title=${{ env.RELEASE_TITLE }}" >> $GITHUB_OUTPUT
+
+  send-email:
+    needs: compose-email
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download email artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: email
+
       - name: Send release email
         uses: dawidd6/action-send-mail@v3
         with:
@@ -118,7 +139,7 @@ jobs:
           server_port: ${{ vars.SMTP_PORT }}
           username: ${{ secrets.SMTP_USERNAME }}
           password: ${{ secrets.SMTP_PASSWORD }}
-          subject: "🚀 New Release: ${{ env.RELEASE_TITLE }}"
+          subject: "🚀 New Release: ${{ needs.compose-email.outputs.title }}"
           to: ${{ vars.SMTP_TO }}
           from: Release Bot <${{ vars.SMTP_FROM }}>
           html_body: file://email.html
