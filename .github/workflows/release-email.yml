@@ -18,7 +18,7 @@ jobs:
           TAG="${{ github.event.workflow_run.head_branch }}"
           echo "Checking tag: $TAG"
           # Skip if tag is not a main version tag (e.g. post, alpha, beta, rc)
-          local valid=false
+          valid=false
           if [[ "$TAG" =~ ^(gllm_|gl_).*-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             valid=true
           fi
