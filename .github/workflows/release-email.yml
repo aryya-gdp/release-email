@@ -30,7 +30,7 @@ jobs:
     if: needs.check-tag.outputs.valid == 'true' && github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     container:
-      image: pandoc/core:3.1
+      image: pandoc/core:3.7-ubuntu
     permissions:
       contents: read
     steps:
@@ -38,7 +38,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: apk add jq
+        run: apt-get update && apt-get install -y jq
 
       - name: Fetch release info
         id: release
