@@ -144,4 +144,4 @@ jobs:
           from: Release Bot <${{ vars.SMTP_FROM }}>
           html_body: file://email.html
           ignore_cert: "false"
-          nodemailerlog: "false"
+          nodemailerdebug: "false"
