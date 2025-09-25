@@ -13,6 +13,14 @@ jobs:
     permissions:
       contents: read
     steps:
+      - name: Validate tag
+        run: |
+          TAG="${{ github.event.workflow_run.head_branch }}"
+          if [[ ! "$TAG" =~ ^(gllm_|gl_).*-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Tag $TAG is not a main version tag. Skipping."
+            exit 1
+          fi
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -30,9 +38,6 @@ jobs:
           # Get release JSON from GitHub API
           gh api repos/${{ github.repository }}/releases/tags/$TAG > release.json
 
-          echo "Release JSON:"
-          cat release.json
-
           # Extract fields
           echo "RELEASE_TITLE=$(jq -r '.name // "No Title"' release.json)" >> $GITHUB_ENV
           echo "RELEASE_TAG=$(jq -r '.tag_name' release.json)" >> $GITHUB_ENV
@@ -47,7 +52,7 @@ jobs:
 
       - name: Convert Markdown to HTML
         run: |
-          RELEASE_HTML=$(echo "${{ env.RELEASE_BODY }}" | pandoc -f markdown -t html)
+          RELEASE_HTML=$(echo "${{ env.RELEASE_BODY }}" | pandoc -f gfm -t html --wrap=preserve --no-highlight)
           {
             echo 'RELEASE_BODY_HTML<<EOF'
             echo "$RELEASE_HTML"
