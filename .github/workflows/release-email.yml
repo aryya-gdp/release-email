@@ -7,120 +7,14 @@ on:
       - completed
 
 jobs:
-  check-tag:
-    runs-on: ubuntu-latest
-    outputs:
-      valid: ${{ steps.validate.outputs.valid }}
-    steps:
-      - name: Validate tag
-        id: validate
-        run: |
-          TAG="${{ github.event.workflow_run.head_branch }}"
-          echo "Checking tag: $TAG"
-          # Skip if tag is not a main version tag (e.g. post, alpha, beta, rc)
-          valid=false
-          if [[ "$TAG" =~ ^(gllm_|gl_).*-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            valid=true
-          fi
-          echo "valid=$valid" >> $GITHUB_OUTPUT
-          echo "valid=$valid"
-
-  send-email:
-    needs: check-tag
-    if: needs.check-tag.outputs.valid == 'true' && github.event.workflow_run.conclusion == 'success'
-    runs-on: ubuntu-latest
-    container:
-      image: pandoc/core:3.1
-    permissions:
-      contents: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install dependencies
-        run: apk add jq
-
-      - name: Fetch release info
-        id: release
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const tag = "${{ github.event.workflow_run.head_branch }}"
-            console.log(`Fetching release for tag: ${tag}`)
-
-            const release = await github.rest.repos.getReleaseByTag({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              tag: tag
-            })
-
-            core.exportVariable("RELEASE_TITLE", release.data.name || "No Title")
-            core.exportVariable("RELEASE_TAG", release.data.tag_name)
-            core.exportVariable("RELEASE_BODY", release.data.body || "<p>No description provided.</p>")
-
-      - name: Convert Markdown to HTML
-        run: |
-          RELEASE_HTML=$(echo "${{ env.RELEASE_BODY }}" | pandoc -f gfm -t html --wrap=preserve --no-highlight)
-          {
-            echo 'RELEASE_BODY_HTML<<EOF'
-            echo "$RELEASE_HTML"
-            echo 'EOF'
-          } >> $GITHUB_ENV
-
-      - name: Prepare email body
-        run: |
-          cat > email.html <<'EOF'
-          <!DOCTYPE html>
-          <html>
-            <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333; max-width: 700px; margin: auto; padding: 20px; background: #fafafa;">
-
-              <div style="background: #fff; border-radius: 10px; padding: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
-
-                <h2 style="text-align:center; color:#2c3e50; margin-top:0;">
-                  🚀 New Release Published!
-                </h2>
-
-                <hr style="border:none; border-top:1px solid #eee; margin:20px 0;">
-
-                <h3 style="color:#e74c3c;">🔖 Title</h3>
-                <p style="font-size:16px; font-weight:bold;">${{ env.RELEASE_TITLE }}</p>
-
-                <h3 style="color:#2980b9;">🏷️ Tag</h3>
-                <p style="font-size:15px; background:#f4f6f8; display:inline-block; padding:4px 8px; border-radius:5px;">
-                  <code style="font-size:14px;">${{ env.RELEASE_TAG }}</code>
-                </p>
-
-                <h3 style="color:#27ae60;">📝 Description</h3>
-                <div style="font-size:15px; background:#fdfdfd; border:1px solid #eee; padding:15px; border-radius:6px;">
-                  ${{ env.RELEASE_BODY_HTML }}
-                </div>
-
-                <p style="margin-top:25px; text-align:center;">
-                  <a href="https://github.com/${{ github.repository }}/releases/tag/${{ env.TAG }}"
-                    style="background:#2ecc71; color:#fff; text-decoration:none; padding:10px 18px; border-radius:6px; font-size:15px; font-weight:bold;">
-                    📌 View Full Release on GitHub
-                  </a>
-                </p>
-
-              </div>
-
-              <p style="font-size:12px; color:#888; text-align:center; margin-top:20px;">
-                Sent automatically by Release Bot 🤖
-              </p>
-            </body>
-          </html>
-          EOF
-
-      - name: Send release email
-        uses: dawidd6/action-send-mail@v3
-        with:
-          server_address: ${{ secrets.SMTP_SERVER }}
-          server_port: ${{ vars.SMTP_PORT }}
-          username: ${{ secrets.SMTP_USERNAME }}
-          password: ${{ secrets.SMTP_PASSWORD }}
-          subject: "🚀 New Release: ${{ env.RELEASE_TITLE }}"
-          to: ${{ vars.SMTP_TO }}
-          from: Release Bot <${{ vars.SMTP_FROM }}>
-          html_body: file://email.html
-          nodemailerdebug: false
-          ignore_cert: false
+  call-shared-workflow:
+    uses: aryya-gdp/action-hub/.github/workflows/send-release-email.yml@main
+    with:
+      tag_prefixes: "(gllm_|gl_)"
+      SMTP_PORT: ${{ vars.SMTP_PORT }}
+      SMTP_TO: ${{ vars.SMTP_TO }}
+      SMTP_FROM: ${{ vars.SMTP_FROM }}
+    secrets:
+      SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+      SMTP_USERNAME: ${{ secrets.SMTP_USERNAME }}
+      SMTP_PASSWORD: ${{ secrets.SMTP_PASSWORD }}
