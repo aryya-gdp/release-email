@@ -18,12 +18,11 @@ jobs:
           TAG="${{ github.event.workflow_run.head_branch }}"
           echo "Checking tag: $TAG"
           # Skip if tag is not a main version tag (e.g. post, alpha, beta, rc)
+          local valid=false
           if [[ "$TAG" =~ ^(gllm_|gl_).*-v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "valid=true" >> $GITHUB_OUTPUT
-          else
-            echo "valid=false" >> $GITHUB_OUTPUT
+            valid=true
           fi
-          echo "valid=$valid"
+          echo "valid=$valid" >> $GITHUB_OUTPUT
 
   send-email:
     needs: check-tag
@@ -38,7 +37,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: sudo apt-get install -y jq
+        run: apk add -y jq
 
       - name: Fetch release info
         id: release
