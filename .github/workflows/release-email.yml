@@ -23,6 +23,7 @@ jobs:
             valid=true
           fi
           echo "valid=$valid" >> $GITHUB_OUTPUT
+          echo "valid=$valid"
 
   send-email:
     needs: check-tag
@@ -37,7 +38,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: apk add -y jq
+        run: apk add jq
 
       - name: Fetch release info
         id: release
