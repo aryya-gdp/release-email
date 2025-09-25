@@ -42,26 +42,42 @@ jobs:
 
       - name: Fetch release info
         id: release
-        run: |
-          TAG="${{ github.event.workflow_run.head_branch }}"
-          echo "TAG=$TAG" >> $GITHUB_ENV
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const tag = process.env.TAG
+            const release = await github.rest.repos.getReleaseByTag({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              tag: tag
+            })
 
-          echo "Getting release info for $TAG..."
+            core.exportVariable("RELEASE_TITLE", release.data.name || "No Title")
+            core.exportVariable("RELEASE_TAG", release.data.tag_name)
+            core.exportVariable("RELEASE_BODY", release.data.body || "<p>No description provided.</p>")
 
-          # Get release JSON from GitHub API
-          gh api repos/${{ github.repository }}/releases/tags/$TAG > release.json
+      # - name: Fetch release info
+      #   id: release
+      #   run: |
+      #     TAG="${{ github.event.workflow_run.head_branch }}"
+      #     echo "TAG=$TAG" >> $GITHUB_ENV
 
-          # Extract fields
-          echo "RELEASE_TITLE=$(jq -r '.name // "No Title"' release.json)" >> $GITHUB_ENV
-          echo "RELEASE_TAG=$(jq -r '.tag_name' release.json)" >> $GITHUB_ENV
+      #     echo "Getting release info for $TAG..."
 
-          {
-            echo 'RELEASE_BODY<<EOF'
-            jq -r '.body // "<p>No description provided.</p>"' release.json
-            echo 'EOF'
-          } >> $GITHUB_ENV
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     # Get release JSON from GitHub API
+      #     gh api repos/${{ github.repository }}/releases/tags/$TAG > release.json
+
+      #     # Extract fields
+      #     echo "RELEASE_TITLE=$(jq -r '.name // "No Title"' release.json)" >> $GITHUB_ENV
+      #     echo "RELEASE_TAG=$(jq -r '.tag_name' release.json)" >> $GITHUB_ENV
+
+      #     {
+      #       echo 'RELEASE_BODY<<EOF'
+      #       jq -r '.body // "<p>No description provided.</p>"' release.json
+      #       echo 'EOF'
+      #     } >> $GITHUB_ENV
+      #   env:
+      #     GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Convert Markdown to HTML
         run: |
