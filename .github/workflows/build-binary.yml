@@ -65,4 +65,4 @@ jobs:
     - name: dummy
       shell: bash
       run: |
-        echo "dummy"
+        exit 1
